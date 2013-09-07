@@ -1,0 +1,293 @@
+/*   MOJ Quick Align Tool
+
+This tool takes two objects: Object and Target
+It will constrain the Object to the Target
+It will make keyframes on the Object
+It will remove the Target's constraints on the Object
+Now the Object should be exactly where the Target is
+*/
+
+////////////////////////////////////
+//-----Initialized Variables-----//
+//////////////////////////////////
+string $objectTextField;
+string $targetTextField;
+
+string $select[] = `ls -sl`;
+
+string $objectName;
+string $targetName;
+
+int $translateCheck;
+int $rotateCheck;
+
+string $closeMenu_Command = "menuCommandClose ()";
+string $currentSelection_Command = "currentSelection()";
+
+string $objectButton_Command = "buttonCommandObject ()";
+string $targetButton_Command = "buttonCommandTarget ()";
+string $startquickAlign = "quickAlign ()";
+
+//////////////////////////////////
+//-----Execution commands------//
+////////////////////////////////
+
+if ($select[0] == "")
+{
+   $objectTextField = "Select Object or Type Name Here";
+   $targetTextField = "Select Target or Type Name Here";
+}
+else if ($select[1] == "")
+{
+   $objectTextField = $select[0];
+   $targetTextField = "Select Target or Type Name Here";
+}
+else
+{
+   $objectTextField = $select[0];
+   $targetTextField = $select[1];
+}
+
+/////////////////////////////
+//-----UserInterface------//
+///////////////////////////
+
+//Check if window is already open. If so, close it.
+if (`window -exists MOJ_quickAlignWindow`) deleteUI MOJ_quickAlignWindow;
+
+//Build window
+window -title "MOJ Quick Align Tool" -menuBar true MOJ_quickAlignWindow;
+
+//Build menu bar
+
+menu -label "File";
+   menuItem -label "Close Window"
+            -command $closeMenu_Command;
+            
+menu -label "Options";
+   menuItem -label "Use Active Selection Only"
+            -checkBox on
+            -command $currentSelection_Command
+            currentSelectionBox; //You are naming this checkBox 'currentSelectionBox'
+   menuItem -label "Double Selection"
+            -checkBox on
+            -enable false
+            doubleSelectBox; //You are naming this checkBox 'doubleSelectBox'
+
+//Build Column
+frameLayout -label "Select the Object first, Target second";
+   rowColumnLayout -nc 9;
+      button -label "Quick Align Now!"
+         -command $startquickAlign;
+
+      text -label "           Translate  ";
+      checkBox -label "X"
+         -value 1
+         translateXBox; //You are naming this Field 'translateXBox'
+      checkBox -label "Y"
+         -value 1
+         translateYBox; //You are naming this Field 'translateYBox'
+      checkBox -label "Z      "
+         -value 1
+         translateZBox; //You are naming this Field 'translateZBox'
+
+      text -label "Rotate  ";
+      checkBox -label "X"
+         -value 1
+         rotateXBox; //You are naming this Field 'rotateXBox'
+      checkBox -label "Y"
+         -value 1
+         rotateYBox; //You are naming this Field 'rotateYBox'
+      checkBox -label "Z      "
+         -value 1
+         rotateZBox; //You are naming this Field 'rotateZBox'
+   setParent ..;
+
+frameLayout -label "Turn off 'Use Active Selection Only' to activate";
+   textFieldButtonGrp -label "Object being moved   "
+         -text $objectTextField
+         -buttonLabel "Use Selected"
+         -buttonCommand $objectButton_Command
+         -enable false
+         objectField; //You are naming this Field 'objectField'
+
+   textFieldButtonGrp -label "Target being aligned to   "
+         -text $targetTextField
+         -buttonLabel "Use Selected"
+         -buttonCommand $targetButton_Command
+         -enable false
+         targetField; //You are naming this Field 'targetField'
+
+//Show the dialog box
+showWindow MOJ_quickAlignWindow;
+
+/////////////////////////
+//-----Procedures-----//
+///////////////////////
+
+proc buttonCommandObject ()
+{
+  string $selected[] = `ls -sl`;
+  string $textFieldObject = $selected[0];
+  textFieldButtonGrp -edit -text $textFieldObject objectField;
+  print $textFieldObject;
+  print("\n");
+
+  int $doubleSelect = `menuItem -query -checkBox doubleSelectBox`;
+
+  if (($doubleSelect == 1) && ($selected[1] != ""))
+  {
+    string $textFieldTarget = $selected[1];
+    textFieldButtonGrp -edit -text $textFieldTarget targetField;
+    print $textFieldTarget;
+    print("\n");
+  }
+}
+
+proc buttonCommandTarget ()
+{
+  string $selected[] = `ls -sl`;
+  string $textFieldTarget = $selected[0];
+  textFieldButtonGrp -edit -text $textFieldTarget targetField;
+  print $textFieldTarget;
+  print("\n");
+
+  int $doubleSelect = `menuItem -query -checkBox doubleSelectBox`;
+
+  if (($doubleSelect == 1) && ($selected[1] != ""))
+  {
+     string $textFieldObject = $selected[1];
+     textFieldButtonGrp -edit -text $textFieldObject objectField;
+     print $textFieldObject;
+     print("\n");
+  }
+}
+
+proc menuCommandClose ()
+{
+  deleteUI MOJ_quickAlignWindow;
+}
+
+proc currentSelection ()
+{
+   int $currentSelectionMode = `menuItem -query -checkBox currentSelectionBox`;
+
+   if ($currentSelectionMode == 1)
+   {
+      textFieldButtonGrp -edit -enable false objectField;
+      textFieldButtonGrp -edit -enable false targetField;
+      menuItem -edit -enable false doubleSelectBox;
+   }
+   else
+   {
+      textFieldButtonGrp -edit -enable true objectField;
+      textFieldButtonGrp -edit -enable true targetField;
+      menuItem -edit -enable true doubleSelectBox;
+   }
+}
+
+proc quickAlign ()
+{
+
+   int $currentSelectionMode = `menuItem -query -checkBox currentSelectionBox`;
+   if ($currentSelectionMode == 1)
+   {
+      string $selected[] = `ls -sl`;
+      string $textFieldObject = $selected[0];
+      string $textFieldTarget = $selected[1];
+
+      textFieldButtonGrp -edit -text $textFieldObject objectField;
+      textFieldButtonGrp -edit -text $textFieldTarget targetField;
+  }
+
+   //Assign the variables based on the info given in the window
+   string $objectName = `textFieldButtonGrp -query -text objectField`;
+   string $targetName = `textFieldButtonGrp -query -text targetField`;
+   int $translateXCheck = `checkBox -query -value translateXBox`;
+   int $translateYCheck = `checkBox -query -value translateYBox`;
+   int $translateZCheck = `checkBox -query -value translateZBox`;
+   int $rotateXCheck = `checkBox -query -value rotateXBox`;
+   int $rotateYCheck = `checkBox -query -value rotateYBox`;
+   int $rotateZCheck = `checkBox -query -value rotateZBox`;
+
+   print ("_________________________Aligned " + $objectName + " to " + $targetName + "________________________________");
+   print ("\n");
+
+   //------Initial Variables--------
+   string $xCheck = "none";
+   string $yCheck = "none";
+   string $zCheck = "none";
+
+   //------Set Constraints-----
+   if ($translateXCheck == 1 || $translateYCheck == 1 || $translateZCheck == 1)
+   {
+      if ($translateXCheck == 0)
+      {
+         $xCheck = "x";
+      }
+      if ($translateYCheck == 0)
+      {
+         $yCheck = "y";
+      }
+      if ($translateZCheck == 0)
+      {
+         $zCheck = "z";
+      }
+
+      pointConstraint -offset 0 0 0 -skip $xCheck -skip $yCheck -skip $zCheck $targetName $objectName;
+   }
+
+   if ($rotateXCheck == 1 || $rotateYCheck == 1 || $rotateZCheck == 1)
+   {
+      if ($rotateXCheck == 0)
+      {
+         $xCheck = "x";
+      }
+      if ($rotateYCheck == 0)
+      {
+         $yCheck = "y";
+      }
+      if ($rotateZCheck == 0)
+      {
+         $zCheck = "z";
+      }
+
+      orientConstraint -offset 0 0 0 -skip $xCheck -skip $yCheck -skip $zCheck $targetName $objectName;
+   }
+
+   //------Set keys------
+   if ($translateXCheck == 1)
+   {
+      setKeyframe ($objectName + ".tx");
+   }
+   if ($translateYCheck == 1)
+   {
+      setKeyframe ($objectName + ".ty");
+   }
+   if ($translateZCheck == 1)
+   {
+      setKeyframe ($objectName + ".tz");
+   }
+   if ($rotateXCheck == 1)
+   {
+      setKeyframe ($objectName + ".rx");
+   }
+   if ($rotateYCheck == 1)
+   {
+      setKeyframe ($objectName + ".ry");
+   }
+   if ($rotateZCheck == 1)
+   {
+      setKeyframe ($objectName + ".rz");
+   }
+
+   //------Delete Constraints-----
+   if ($translateXCheck == 1 || $translateYCheck == 1 || $translateZCheck == 1)
+   {
+      pointConstraint -remove $targetName $objectName;
+   }
+   if ($rotateXCheck == 1 || $rotateYCheck == 1 || $rotateZCheck == 1)
+   {
+      orientConstraint -remove $targetName $objectName;
+   }
+}

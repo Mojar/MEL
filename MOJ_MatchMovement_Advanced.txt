@@ -1,0 +1,1225 @@
+////////////////////////////////////
+//-----Initialized Variables-----//
+//////////////////////////////////
+
+string $listType_Object = "object_List";
+string $listType_Transform = "transform_List";
+string $listType_Target = "target_List";
+
+string $direction_Up = "Up";
+string $direction_Down = "Down";
+
+string $checkTypeTX = "tx ";
+string $checkTypeTY = "ty ";
+string $checkTypeTZ = "tz ";
+string $checkTypeRX = "rx ";
+string $checkTypeRY = "ry ";
+string $checkTypeRZ = "rz ";
+string $checkTypeMO = "mo ";
+
+
+/////////////////////////////
+//-----UserInterface------//
+///////////////////////////
+
+//---Build MatchMove Advanced Window---//
+//Check if window is already open. If so, close it.
+if (`window -exists MOJ_MatchMoveWindow_Advanced`) deleteUI MOJ_MatchMoveWindow_Advanced;
+
+//Build window
+window -title "MOJ Advanced Match Movement Tool" MOJ_MatchMoveWindow_Advanced;
+
+frameLayout -label "So Advanced. So Cool";
+   rowColumnLayout -nc 3;
+        
+      text -label "   Objects you'd like to move   (00)                         " objectAmountText; //You are naming this Field 'objectAmountText'
+
+      rowColumnLayout -numberOfColumns 7;
+         checkBox -label "tx"
+            -value 1
+            -changeCommand "transformCheck($checkTypeTX)"
+            translateXBox; //You are naming this Field 'translateXBox'
+         checkBox -label "ty"
+            -value 1
+            -changeCommand "transformCheck($checkTypeTY)"
+            translateYBox; //You are naming this Field 'translateYBox'
+         checkBox -label "tz"
+            -value 1
+            -changeCommand "transformCheck($checkTypeTZ)"
+            translateZBox; //You are naming this Field 'translateZBox'
+         checkBox -label "rx"
+            -value 1
+            -changeCommand "transformCheck($checkTypeRX)"
+            rotateXBox; //You are naming this Field 'rotateXBox'
+         checkBox -label "ry"
+            -value 1
+            -changeCommand "transformCheck($checkTypeRY)"
+            rotateYBox; //You are naming this Field 'rotateYBox'
+         checkBox -label "rz"
+            -value 1
+            -changeCommand "transformCheck($checkTypeRZ)"
+            rotateZBox; //You are naming this Field 'rotateZBox'
+         checkBox -label "mo"
+            -value 1
+            -changeCommand "transformCheck($checkTypeMO)"
+            maintainOffsetBox; //You are naming this Field 'maintainOffsetBox'
+      setParent ..;
+
+      text -label "                (00)   Targets you'd like to match" targetAmountText; //You are naming this Field 'targetAmountText'
+   setParent ..;
+
+   rowColumnLayout -nc 5 -width 690;
+      columnLayout -columnAttach "left" 5 -rowSpacing 10 -width 110;
+         button -label "Add Item(s)"
+            -width 90
+            -command "addSelectedItems($listType_Object)"
+            addItemButton_object; //You are naming this Button 'addItemButton_object'
+         button -label "Remove"
+            -width 90
+            -command "removeSelectedItems($listType_Object)"
+            removeItemButton_object; //You are naming this Button 'removeItemButton_object'
+         button -label "Move Up List"
+            -width 90
+            -command "moveList($listType_Object, $direction_Up)"
+             moveUpButton_object; //You are naming this Button 'moveUpButton_object'
+         button -label "Move Down"
+            -width 90
+            -command "moveList($listType_Object, $direction_Down)"
+            moveDownButton_object; //You are naming this Button 'moveDownButton_object'
+         button -label "Save List"
+            -width 90
+            -command "saveList($listType_Object)"
+            saveListButton_object; //You are naming this Button 'saveListButton_object'
+         button -label "Load"
+            -width 90
+            -command "loadList($listType_Object)"
+            loadListButton_object; //You are naming this Button 'loadListButton_object'
+      setParent ..;
+
+      textScrollList -annotation "Objects you want to move" -allowMultiSelection true
+         -width 175
+         -selectCommand "selectItem($listType_Object, $listType_Transform, $listType_Target)"
+         -deleteKeyCommand "removeSelectedItems($listType_Object)"
+         object_List; //You are naming this Field 'object_List'
+
+      textScrollList -annotation "Translate Rotate maintainOffset" -allowMultiSelection true
+         -width 120
+         -selectCommand "selectItem($listType_Transform, $listType_Object, $listType_Target)"
+         -deleteKeyCommand "removeSelectedItems($listType_Transform)"
+         transform_List; //You are naming this Field 'transform_List'
+
+      textScrollList -annotation "Targets you want to match to" -allowMultiSelection true
+         -width 175
+         -selectCommand "selectItem($listType_Target, $listType_Object, $listType_Transform)"
+         -deleteKeyCommand "removeSelectedItems($listType_Target)"
+         target_List; //You are naming this Field 'target_List'
+
+      columnLayout -columnAttach "right" 5 -rowSpacing 10 -width 130;
+         button -label "Add Item(s)"
+            -annotation "Adds selected items underneath list selection"
+            -width 90
+            -command "addSelectedItems($listType_Target)"
+            addItemButton_target; //You are naming this Button 'addItemButton_target'
+         button -label "Remove"
+            -width 90
+            -command "removeSelectedItems($listType_Target)"
+            removeItemButton_target; //You are naming this Button 'removeItemButton_target'
+         button -label "Move Up List"
+            -width 90
+            -command "moveList($listType_Target, $direction_Up)"
+            moveUpButton_target; //You are naming this Button 'moveUpButton_target'
+         button -label "Move Down"
+            -width 90
+            -command "moveList($listType_Target, $direction_Down)"
+            moveDownButton_target; //You are naming this Button 'moveDownButton_target'
+         button -label "Save List"
+            -width 90
+            -command "saveList($listType_Target)"
+            saveListButton_target; //You are naming this Button 'saveListButton_target'
+         button -label "Load"
+            -width 90
+            -command "loadList($listType_Target)"
+            loadListButton_target; //You are naming this Button 'loadListButton_target'
+      setParent ..;
+   setParent ..;
+   rowColumnLayout -nc 7;
+      text "  ";
+      button -label "Find Selected"
+         -width 90
+         -command "findSelected($listType_Object)"
+         findSelected_object; //You are naming this Button 'addItemButton_object'
+      intFieldGrp -label "Start Frame   "
+         -value1 1
+         -columnWidth 1 80
+         startFrameField; //You are naming this Field 'startFrameField'
+      intFieldGrp -label "End Frame   "
+         -value1 10
+         -columnWidth 1 63
+         endFrameField; //You are naming this Field 'endFrameField'
+      intFieldGrp -label "Step Count   "
+         -value1 1
+         -columnWidth 1 65
+         stepCountField; //You are naming this Field 'stepCountField'
+      text "        ";
+      button -label "Find Selected"
+         -width 90
+         -command "findSelected($listType_Target)"
+         moveUpButton_object; //You are naming this Button 'moveUpButton_object'
+   setParent ..;
+   rowColumnLayout -nc 6 -width 690;
+	      text "  ";
+	      button -label "Rename"
+	         -width 90
+	         -command "buildWindow_rename($listType_Object)"
+	         renameButton_object; //You are naming this Button 'moveUpButton_object' 
+         text "                                         ";
+	      button -label "Start Match Moving"
+	         -width 150
+	         -command "startMatchMoving()"
+	         matchMoveButton; //You are naming this Button 'matchMoveButton'
+         text "                                                                           ";
+	      button -label "Rename"
+	         -width 90
+	         -command "buildWindow_rename($listType_Target)"
+	         renameButton_target; //You are naming this Button 'moveUpButton_object'
+
+//Show the dialog box
+showWindow MOJ_MatchMoveWindow_Advanced;
+
+
+/////////////////////////
+//-----Procedures-----//
+///////////////////////
+
+proc selectItem (string $list1, string $list2, string $list3)
+{
+   textScrollList -edit -deselectAll $list2; //Remove old selections
+   textScrollList -edit -deselectAll $list3;
+
+   int $itemPosition[] = `textScrollList -query -selectIndexedItem $list1`; //Locate the position each of your current selections in the list
+   int $selectionSize = `size $itemPosition`; //Determine how many objects you have selected
+   int $amountInOtherList = `textScrollList -query -numberOfItems $list3`;
+
+   //These variables are for influencing the display of the transform checkBoxes  --Start--
+   int $txCheck = 1;
+   int $tyCheck = 1;
+   int $tzCheck = 1;
+   int $rxCheck = 1;
+   int $ryCheck = 1;
+   int $rzCheck = 1;
+   int $moCheck = 1;
+
+   string $transformItem[];
+   string $transformItem_Split[];
+   int $stringSize;
+   int $j;
+   //These variables are for influencing the display of the transform checkBoxes  --End--
+
+   int $i = 0;
+   while ($i < $selectionSize) //Loop used for multiple selections(otherwise it would only select the first item in the array)
+   {
+      if ($list1 == "object_List" || $list1 == "transform_List")
+      {
+			textScrollList -edit -selectIndexedItem $itemPosition[$i] $list2;
+      }
+
+      if ($itemPosition[$i] <= $amountInOtherList)
+      {
+         textScrollList -edit -selectIndexedItem $itemPosition[$i] $list2; //Select objects in other lists at specific positions
+         textScrollList -edit -selectIndexedItem $itemPosition[$i] $list3;
+      }
+
+      $transformItem = `textScrollList -query -selectItem transform_List`; //This influences the display of the transform checkBoxes --Start--
+      tokenize $transformItem[$i] " " $transformItem_Split; //Split the string $transformItem into pieces as separated by spaces (" "). Each piece goes into the array $transformItem_Split.
+      $stringSize = `size $transformItem_Split`;
+      for ($j = 0; $j < $stringSize; $j++)
+      {
+         if ($transformItem_Split[0] != "tx")
+         {
+            $txCheck = 0;
+         }
+         if ($transformItem_Split[1] != "ty")
+         {
+            $tyCheck = 0;
+         }
+         if ($transformItem_Split[2] != "tz")
+         {
+            $tzCheck = 0;
+         }
+         if ($transformItem_Split[3] != "rx")
+         {
+            $rxCheck = 0;
+         }
+         if ($transformItem_Split[4] != "ry")
+         {
+            $ryCheck = 0;
+         }
+         if ($transformItem_Split[5] != "rz")
+         {
+            $rzCheck = 0;
+         }
+         if ($transformItem_Split[6] != "mo")
+         {
+            $moCheck = 0;
+         }
+      }   //This influences the display of the transform checkBoxes --End--
+
+      $i += 1;
+   }
+   checkBox -edit -value $txCheck translateXBox;
+   checkBox -edit -value $tyCheck translateYBox;
+   checkBox -edit -value $tzCheck translateZBox;
+   checkBox -edit -value $rxCheck rotateXBox;
+   checkBox -edit -value $ryCheck rotateYBox;
+   checkBox -edit -value $rzCheck rotateZBox;
+   checkBox -edit -value $moCheck maintainOffsetBox;
+}
+
+proc addSelectedItems (string $listType) //This should add multiple items selected from the workspace into the list. Items will be added below what you currently have selected in the list.
+{
+   int $listSize = `textScrollList -query -numberOfItems $listType`; //How many items are in the list to begin with
+   string $currentList[];
+   int $listPosition[];
+   int $arraySize;
+
+   if ($listSize != 0)
+   {
+      $currentList = `textScrollList -query -allItems $listType`;
+      $listPosition = `textScrollList -query -selectIndexedItem $listType`; //Locate your current position in the list
+      $arraySize = `size $listPosition`;
+
+      if ($listPosition[0] == 0) //If nothing is selected in the list
+      {
+         $listPosition[0] = $listSize; //Make the position the last object in the list
+      }
+      else
+      {
+         $listPosition[0] = $listPosition[$arraySize - 1];
+      }
+      textScrollList -edit -selectIndexedItem $listPosition[0] $listType; //Make sure only the bottom object in the list is selected (if more than one is selected initially)
+   }
+
+   string $oldList[] = $currentList; //Make a copy of your list
+
+   string $selectedItems[] = `ls -sl`; // These are the items you'd like to add to your list
+   $arraySize = `size $selectedItems`;
+   int $i = 0;
+
+   if (`size $selectedItems`)
+   {
+      print ("Added to " + $listType +":");
+      print ("\n");
+      print $selectedItems;
+      print ("\n");
+   }
+
+   while ($i < $arraySize) //This loops adds your new items under the list selection
+   {
+        $currentList[($listPosition[0] + $i)] = $selectedItems[$i];
+        $i += 1;
+   }
+
+   $arraySize = `size $oldList`;
+   int $j = 0;
+   while (($listPosition[0] + $j) < $arraySize) //This loop adds the rest of the objects from the old list underneath the newly added items
+   {
+      $currentList[($listPosition[0] + $i)] = $oldList[($listPosition[0] + $j)];
+      $i += 1;
+      $j += 1;
+   }
+    
+   $arraySize = `size $currentList`;
+   $i = 0;
+
+   textScrollList -edit -removeAll $listType;
+    
+   while ($i < $arraySize) //This loop creates the new list
+   {
+      textScrollList -edit -append $currentList[$i] $listType;
+      $i += 1;
+   }
+
+   $arraySize = `size $selectedItems`;
+   if ($listType == "object_List")
+   {
+      addSelectedItems_Transform($listPosition, $listSize, $arraySize); //Add transform components to the transform list
+   }
+
+   $i = 0;
+   while ($i < $arraySize)   //This loops selects all your newly added items
+   {
+      textScrollList -edit -selectIndexedItem ($listPosition[0] + $i + 1) $listType;
+      $i += 1;
+   }
+
+   clear $oldList; // empty arrays
+
+//--Show how many objects are in the list now--//
+   $listSize = `textScrollList -query -numberOfItems $listType`; //How many items are in the list now
+   string $number = $listSize;
+   if ($listSize < 10)
+   {
+      $number = "0" + $listSize;
+   }
+
+	if ($listType == "object_List")
+	{
+      text -edit -label ("   Objects you'd like to move   (" + $number + ")                         ") objectAmountText;
+   }
+	else if ($listType == "target_List")
+	{
+      text -edit -label ("                (" + $number + ")   Targets you'd like to match") targetAmountText;
+   }
+}
+
+proc addSelectedItems_Transform (int $listPosition[], int $listSize, int $amountSelected)
+{
+   string $listType = "transform_List";
+   string $currentList[];
+   int $arraySize = `size $listPosition`;
+
+   if ($listSize != 0)
+   {
+      $currentList = `textScrollList -query -allItems $listType`;
+
+      if ($listPosition[0] == 0) //If nothing is selected in the list
+      {
+         $listPosition[0] = $listSize; //Make the position the last object in the list
+      }
+      textScrollList -edit -selectIndexedItem $listPosition[0] $listType; //Make sure only the bottom object in the list is selected (if more than one is selected initially)
+   }
+
+   string $oldList[] = $currentList; //Make a copy of your list
+
+   int $i = 0;
+   while ($i < $amountSelected) //This loops adds your new items under the list selection
+   {
+        $currentList[($listPosition[0] + $i)] = " tx ty tz rx ry rz mo";
+        $i += 1;
+   }
+
+   int $arraySize = `size $oldList`;
+   int $j = 0;
+   while (($listPosition[0] + $j) < $arraySize) //This loop adds the rest of the objects from the old list underneath the newly added items
+   {
+      $currentList[($listPosition[0] + $i)] = $oldList[($listPosition[0] + $j)];
+      $i += 1;
+      $j += 1;
+   }
+    
+   $arraySize = `size $currentList`;
+   $i = 0;
+
+   textScrollList -edit -removeAll $listType;
+    
+   while ($i < $arraySize) //This loop creates the new list
+   {
+      textScrollList -edit -append $currentList[$i] $listType;
+      $i += 1;
+   }
+
+   clear $oldList; // empty arrays
+}
+
+proc removeSelectedItems (string $listType) //removes selected objects from list starting from the bottom of the list moving up
+{
+   int $listPosition[];
+   int $arraySize;
+
+   $listPosition = `textScrollList -query -selectIndexedItem $listType`; //Locate your current position in the list (works for multiple selections)
+
+   $arraySize = `size $listPosition`;
+   int $i = $arraySize;
+
+   if ($listType == "object_List" || $listType == "transform_List")
+   {
+      while ($i > 0)
+      {
+         textScrollList -edit -removeIndexedItem $listPosition[$i - 1] object_List;
+         textScrollList -edit -removeIndexedItem $listPosition[$i - 1] transform_List;
+
+         $i -= 1;
+      }
+      $arraySize = `textScrollList -query -numberOfItems object_List`;
+      if ($listPosition[$i] > $arraySize)  //If you deleted the last item in the list
+	   {
+	      if ($arraySize > 0)
+		   {
+		      textScrollList -edit -selectIndexedItem $arraySize object_List; //Select the last object in the list
+		      textScrollList -edit -selectIndexedItem $arraySize transform_List;
+		   }
+	   }
+	   else if ($arraySize > 0)
+	   {
+		   textScrollList -edit -selectIndexedItem $listPosition[$i] object_List; //Select the same list position from what you deleted
+		   textScrollList -edit -selectIndexedItem $listPosition[$i] transform_List;
+	   }
+   }
+
+   if ($listType == "target_List")
+   {
+      while ($i > 0)
+      {
+         textScrollList -edit -removeIndexedItem $listPosition[$i - 1] target_List;
+
+         $i -= 1;
+      }
+	   $arraySize = `textScrollList -query -numberOfItems target_List`; //How many objects are in the list now?
+	   if ($listPosition[$i] > $arraySize)  //If you deleted the last item in the list
+	   {
+		   if ($arraySize > 0)
+		   {
+			   textScrollList -edit -selectIndexedItem $arraySize target_List; //Select the last object in the list
+		   }
+	   }
+	   else if ($arraySize > 0)
+	   {
+		   textScrollList -edit -selectIndexedItem $listPosition[$i] target_List; //Select the same list position from what you deleted
+	   }
+   }
+
+   //--Show how many objects are in the list now--//
+   $listSize = `textScrollList -query -numberOfItems $listType`; //How many items are in the list now
+   string $number = $listSize;
+   if ($listSize < 10)
+   {
+      $number = "0" + $listSize;
+   }
+
+	if ($listType == "object_List")
+	{
+      text -edit -label ("   Objects you'd like to move   (" + $number + ")                         ") objectAmountText;
+   }
+	else if ($listType == "target_List")
+	{
+      text -edit -label ("                (" + $number + ")   Targets you'd like to match") targetAmountText;
+   }
+
+}
+
+proc moveList (string $listType, string $direction)
+{
+	string $selectedItems[] = `textScrollList -query -selectItem $listType`; // These are the items you'd like to move in your list
+	string $selectedItems_transforms[];
+   int $listPosition[] = `textScrollList -query -selectIndexedItem $listType`; //Locate your current position in the list (works for multiple selections);
+   int $arraySize = `size $selectedItems`;
+   
+   int $lastItemPosition = $listPosition[$arraySize - 1]; //Used solely to determine whether the last item on the list is already at the bottom
+
+   if ($listType == "object_List")
+	{
+       $selectedItems_transforms = `textScrollList -query -selectItem transform_List`;
+	}
+
+   //--Remove objects from the list--//
+	int $i = $arraySize;
+   if ($listType == "object_List" || $listType == "transform_List")
+   {
+      while ($i > 0)
+      {
+         textScrollList -edit -removeIndexedItem $listPosition[$i - 1] object_List;
+         textScrollList -edit -removeIndexedItem $listPosition[$i - 1] transform_List;
+
+         $i -= 1;
+      }
+   }
+   else if ($listType == "target_List")
+   {
+      while ($i > 0)
+      {
+         textScrollList -edit -removeIndexedItem $listPosition[$i - 1] target_List;
+
+         $i -= 1;
+      }
+   }
+
+   //--Add objects to the list--//
+   int $j;  // This determines whether it's moving up or down the list (or zero if it's already at the top/bottom)
+	if ($direction == "Up")
+	{
+	   if ($listPosition[0] == 1) //If top object is already at the top of the list
+      {
+		   $j = 1;
+      }
+      else
+      {
+	      $j = $listPosition[0] - 1;  // first item in the array's position - 1
+      }
+   }
+   else if ($direction == "Down")
+	{
+	   if ($listPosition[$arraySize - 1] == `textScrollList -query -numberOfItems $listType` + $arraySize) //If bottom object is already at the bottom of the list (number of items in list after list is removed + list size)
+      {
+		   $j = $listPosition[$arraySize - 1] - $arraySize + 1;
+      }
+      else
+      {
+         $j = $listPosition[$arraySize - 1] - $arraySize + 2;
+      }
+   }
+
+   $i = 0;
+	while ($i < $arraySize)
+	{
+	   textScrollList -edit -appendPosition ($j + $i) $selectedItems[$i] $listType;  //Add objects back into list starting from (top object position - (1 or 0) + increment)
+		textScrollList -edit -selectIndexedItem ($j + $i) $listType;  //highlight the items in their new position
+
+		if ($listType == "object_List")
+	   {
+	      textScrollList -edit -appendPosition ($j + $i) $selectedItems_transforms[$i] transform_List;  //Add transforms back into list
+			textScrollList -edit -selectIndexedItem ($j + $i) transform_List;   //highlight the items in their new position
+	   }
+
+		$i += 1;
+   }
+}
+
+proc saveList (string $listType)
+{
+   string $multipleFilters = "Text Files (*.txt);;All Files (*.*)";   //Types of files to browse for
+   string $filePath[] = `fileDialog2 -caption ("Save " + $listType) -fileMode 0 -fileFilter $multipleFilters -selectFileFilter "Text Files"`;   //-fileMode = Indicate what the dialog is to return. Check 'help' for details.
+
+   string $currentList[];
+   string $concatenate;
+   int $i;
+   int $arraySize;
+
+	int $filePath_Size = `size $filePath`;
+	if ($filePath_Size > 0) //Disable warnings if you hit cancel
+	{
+	   //Assign the variables based on the info given in the window
+	   $currentList = `textScrollList -query -allItems $listType`;
+
+	   $i = 0;
+	   $arraySize = `size $currentList`;
+	   print $arraySize;
+	   while ($i < $arraySize)
+	   {
+		   $concatenate += $currentList[$i] + " \n";
+		   $i += 1;
+	   }
+	
+	   $fileId = `fopen $filePath[0] "w"`;
+	   fprint $fileId $concatenate;
+	   fclose $fileId;
+   }
+   
+   if ($listType == "object_List")
+   {
+	   saveList("transform_List");
+   }
+
+}
+
+proc loadList (string $listType)
+{
+   string $multipleFilters = "Text Files (*.txt);;All Files (*.*)";   //Types of files to browse for
+   string $filePath[] = `fileDialog2 -caption ("Load " + $listType) -fileMode 1 -fileFilter $multipleFilters -selectFileFilter "Text Files"`;   //-fileMode = Indicate what the dialog is to return. Check 'help' for details.
+
+	int $fileId;
+	int $filePath_Size = `size $filePath`;
+
+	if ($filePath_Size > 0) //Disable warnings if you hit cancel
+	{
+	   $fileId = `fopen $filePath[0] "r"`;
+	
+	   textScrollList -edit -removeAll $listType;
+	   if ($listType == "object_List")
+	   {
+	      textScrollList -edit -removeAll transform_List;
+	   }
+	
+	   string $item[];
+		string $tokenize[];
+	
+	   int $i = 0;
+	   string $nextLine = `fgetline $fileId`;
+	   while ( size( $nextLine ) > 0 )
+	   {
+			tokenize $nextLine " " $tokenize; // remove white spaces     Fun Fact! string $cleanLine = strip($nextLine); would also do the same thing
+			$item[$i] = $tokenize[0];
+			textScrollList -edit -append $item[$i] $listType;
+	
+			if ($listType == "object_List")
+			{
+			   textScrollList -edit -append " tx ty tz rx ry rz mo" transform_List;
+			}
+	
+	    	$nextLine = `fgetline $fileId`;
+	    	$i += 1;
+	   }
+	   fclose $fileId;
+	}
+
+
+   //--Show how many objects are in the list now--//
+   $listSize = `textScrollList -query -numberOfItems $listType`; //How many items are in the list now
+   string $number = $listSize;
+   if ($listSize < 10)
+   {
+      $number = "0" + $listSize;
+   }
+
+	if ($listType == "object_List")
+	{
+      text -edit -label ("   Objects you'd like to move   (" + $number + ")                         ") objectAmountText;
+   }
+	else if ($listType == "target_List")
+	{
+      text -edit -label ("                (" + $number + ")   Targets you'd like to match") targetAmountText;
+   }
+
+
+   //--Load Transform List--//
+   string $cleanLine;
+
+   if ($listType == "object_List")
+   {
+	   $multipleFilters = "Text Files (*.txt);;All Files (*.*)";   //Types of files to browse for
+	   $filePath = `fileDialog2 -caption "Load transform_List" -fileMode 1 -fileFilter $multipleFilters -selectFileFilter "Text Files"`;   //-fileMode = Indicate what the dialog is to return. Check 'help' for details.
+	
+		$filePath_Size = `size $filePath`;
+	
+		if ($filePath_Size > 0) //Disable warnings if you hit cancel
+		{
+		   $fileId = `fopen $filePath[0] "r"`;
+		
+		   textScrollList -edit -removeAll transform_List;
+		   if ($listType == "object_List")
+		   {
+		      textScrollList -edit -removeAll transform_List;
+		   }
+
+		   int $i = 0;
+		   string $nextLine = `fgetline $fileId`;
+		   while ( size( $nextLine ) > 0 )
+		   {
+				$cleanLine = strip($nextLine);  // remove white spaces on either side of line
+				$item[$i] = $cleanLine;
+				textScrollList -edit -append $item[$i] transform_List;
+	
+		    	$nextLine = `fgetline $fileId`;
+		    	$i += 1;
+		   }
+		   fclose $fileId;
+		}
+   }
+}
+
+proc transformCheck (string $checkType)
+{
+   print $checkType;
+   print ("\n");
+   
+   int $listPosition[];
+   $listPosition = `textScrollList -query -selectIndexedItem transform_List`;
+   int $listSize = `size $listPosition`;
+
+   string $transformItem[];
+   $transformItem = `textScrollList -query -selectItem transform_List`;
+   string $transformItem_Split[];
+   int $stringSize;
+
+   int $transformCheck[];
+   $transformCheck[0] = `checkBox -query -value translateXBox`;
+   $transformCheck[1] = `checkBox -query -value translateYBox`;
+   $transformCheck[2] = `checkBox -query -value translateZBox`;
+   $transformCheck[3] = `checkBox -query -value rotateXBox`;
+   $transformCheck[4] = `checkBox -query -value rotateYBox`;
+   $transformCheck[5] = `checkBox -query -value rotateZBox`;
+   $transformCheck[6] = `checkBox -query -value maintainOffsetBox`;
+
+   string $transformType[];
+
+   int $i = 0;
+   int $j;
+
+   for ($i = 0; $i < $listSize; $i++)
+   {
+      clear $transformItem_Split;
+
+      $transformType[0] = "tx "; //Reset the default states in case they were changed during the $j loop
+      $transformType[1] = "ty ";
+      $transformType[2] = "tz ";
+      $transformType[3] = "rx ";
+      $transformType[4] = "ry ";
+      $transformType[5] = "rz ";
+      $transformType[6] = "mo ";
+
+      tokenize $transformItem[$i] " " $transformItem_Split; //Split the string $transformItem into pieces as separated by spaces (" "). Each piece goes into the array $transformItem_Split.
+      $stringSize = `size $transformItem_Split`;
+      for ($j = 0; $j < $stringSize; $j++)
+      {
+         if ($transformCheck[$j] == 0 && $transformType[$j] == $checkType) // If you're turning off a transform, only the one you clicked will turn to a blank
+         {
+            $transformType[$j] = " _ ";
+         }
+         else if ($transformCheck[$j] == 1 && $transformType[$j] == $checkType)
+         {
+            //If you're turning on a transform, only the one you clicked will turn to the default text
+         }
+         else
+         {
+            $transformType[$j] = ($transformItem_Split[$j] + " ");  //For every object you didn't click, keep them in the state they were before you clicked
+         }
+      }
+      textScrollList -edit -removeIndexedItem $listPosition[$i] transform_List;
+      textScrollList -edit -appendPosition $listPosition[$i] (" " + $transformType[0]+$transformType[1]+$transformType[2]+$transformType[3]+$transformType[4]+$transformType[5]+$transformType[6]) transform_List;
+      textScrollList -edit -selectIndexedItem $listPosition[$i] transform_List;
+   }
+}
+
+proc findSelected (string $listType)
+{
+   string $listItem[];
+   $listItem = `textScrollList -query -selectItem $listType`;
+   select $listItem;
+
+   clear $listItem;
+}
+
+//---Build Rename Window---//
+proc buildWindow_rename(string $listType)
+{
+   if ($listType == "object_List"){
+      $listType = "Object List";
+	}
+	else{
+      $listType = "Target List";
+	}
+
+	//Check if window is already open. If so, close it.
+	if (`window -exists MOJ_MatchMoveWindow_Advanced_Rename`) deleteUI MOJ_MatchMoveWindow_Advanced_Rename;
+	
+	//Build window
+	window -title ("Rename Options for " + $listType) MOJ_MatchMoveWindow_Advanced_Rename;
+	
+	   frameLayout -label "What items would you like to rename?" -width 310;
+	      columnLayout -columnAttach "left" 50;
+			   radioButtonGrp
+	            -numberOfRadioButtons 2
+	            -labelArray2 "All" "Selected in list"
+	            -select 1
+	         radioButtonGroup_renameAmount;
+	     setParent ..;
+	   frameLayout -label "How would you like to rename the item?";
+	
+	      radioButtonGrp
+			   -numberOfRadioButtons 3
+	      	-labelArray3 "Rename" "Add prefix" "Add suffix"
+	      	-select 2
+			radioButtonGroup_renameType;
+	      
+			columnLayout -columnAttach "left" 25 -rowSpacing 10;
+			   textFieldGrp textFieldGroup_newName;
+	      setParent ..;
+	      
+	      radioButtonGrp
+			   -numberOfRadioButtons 1
+	      	-labelArray2 "Find and replace" " "
+	      	-onCommand "textFieldGrp -edit -enable true textFieldGroup_replace"
+	      	-offCommand "textFieldGrp -edit -enable false textFieldGroup_replace"
+			   -shareCollection radioButtonGroup_renameType
+			radioButtonGroup_replace;
+	
+			columnLayout -columnAttach "left" 25 -rowSpacing 10;
+			   textFieldGrp -enable false textFieldGroup_replace;
+	      setParent ..;
+         
+			if ($listType == "Object List"){
+		      button -label "Modify Name"
+		             -command "renameString($listType_Object)" //because putting $listType in here produces an error for some reason
+				renameButton_modifyName;
+			}
+			else{
+		      button -label "Modify Name"
+		             -command "renameString($listType_Target)"
+				renameButton_modifyName;
+			}
+
+
+	//Show the dialog box
+	showWindow MOJ_MatchMoveWindow_Advanced_Rename;
+}
+
+
+proc renameString (string $listType)
+{
+   string $addedString = `textFieldGrp -query -text textFieldGroup_newName`; //new name
+	string $removedString = `textFieldGrp -query -text textFieldGroup_replace`; //replaced name
+   int $selectType = `radioButtonGrp -query -select radioButtonGroup_renameAmount`;   //1 = All, 2 = selected
+	int $renameType = `radioButtonGrp -query -select radioButtonGroup_renameType`;   //1 = Rename, 2 = prefix, 3 = suffix, 4 = replace
+
+	string $currentItem[];
+   string $listSelected[];  //For replace only
+   string $tokenizedString[];  //For replace only
+   int $i;
+   int $j;
+
+   int $selectedItems[]; //Holds the index number of the item being modified
+
+   if ($selectType == 2){ //if 'Selected In List' chosen:
+      $currentItem = `textScrollList -query -selectItem $listType`;   //Get item from list
+	   $selectedItems = `textScrollList -query -selectIndexedItem $listType`;
+	}
+	else{ //select All
+	   $currentItem = `textScrollList -query -allItems $listType`;   //Get all items in list
+		for ($i = 0; $i < (`textScrollList -query -numberOfItems $listType`); $i++){
+		   $selectedItems[$i] = $i + 1;
+	   }
+	}
+
+	for ($i = 0; $i < (`size $selectedItems`); $i++){
+	   textScrollList -edit -removeIndexedItem $selectedItems[$i] $listType; //Remove from list
+
+	   if ($renameType == 1){
+		   $currentItem[$i] = $addedString;
+		}
+		else if ($renameType == 2){
+		   $currentItem[$i] = $addedString + $currentItem[$i];
+		}
+		else if ($renameType == 3){
+		   $currentItem[$i] = $currentItem[$i] + $addedString;
+		}
+		else if ($renameType == 0 && (`radioButtonGrp -query -select radioButtonGroup_replace`) == 1){
+         polyCube -name "MOJ_MatchMoveTempName_Cube";
+         group -n "MOJ_MatchMoveTempName_Group" "MOJ_MatchMoveTempName_Cube"; //Put cube inside group so that it can be named anything regardless of duplicates
+         select "MOJ_MatchMoveTempName_Cube";
+			rename "MOJ_MatchMoveTempName_Cube" $currentItem[$i];
+         searchReplaceNames $removedString $addedString "selected";
+         $listSelected = `ls -selection`;
+         tokenize $listSelected[0] "|" $tokenizedString;
+         if (`size $tokenizedString` > 1){
+            $currentItem[$i] = $tokenizedString[1];
+		   }
+		   else{
+            $currentItem[$i] = $tokenizedString[0];
+			}
+         delete "MOJ_MatchMoveTempName_Group";
+		}
+
+	   textScrollList -edit -appendPosition $selectedItems[$i] $currentItem[$i] $listType; //Add new item where old item used to be
+	   textScrollList -edit -selectIndexedItem $selectedItems[$i] $listType;
+	}
+	
+	clear $currentItem;
+	clear $listSelected;
+	clear $tokenizedString;
+}
+
+proc startMatchMoving ()
+{
+   //Make sure you aren't making unnecessary keys
+   int $checkAutoKey = `autoKeyframe -query -state`;
+   autoKeyframe -state off;
+
+
+   //Check to see if there are any objects that you're trying to match that don't exist in the scene -- Start --
+   string $listItem_Object[];
+   string $listItem_Target[];
+
+   $listItem_Object = `textScrollList -query -allItems object_List`;
+   $listItem_Target = `textScrollList -query -allItems target_List`;
+
+   int $arraySize_Object = `size $listItem_Object`;
+   int $arraySize_Target = `size $listItem_Target`;
+
+   string $missingObjects[];
+   string $missingTargets[];
+
+   int $i = 0;
+   int $j = 0;
+   while ($i < $arraySize_Object)
+   {
+      if( (`objExists $listItem_Object[$i]`) != 1 )
+      {
+         $missingObjects[$j] = $listItem_Object[$i];
+         $j += 1;
+      }
+      $i += 1;
+   }
+
+   $i = 0;
+   while ($i < $arraySize_Target)
+   {
+      if( (`objExists $listItem_Target[$i]`) != 1 )
+      {
+         $missingObjects[$j] = $listItem_Target[$i];
+         $j += 1;
+      }
+      $i += 1;
+   }
+
+   if ((`size $missingObjects`) != 0)
+   {
+      warning("The following items don't exist in the scene:"); // Print a warning if items do not exist in the scene
+      print $missingObjects;
+      print ("\n");
+   }
+
+   clear $listItem_Object;
+   clear $listItem_Target;
+   clear $missingObjects;
+   //Check to see if there are any objects that you're trying to match that don't exist in the scene -- End --
+   
+   //----------------MatchMoving-------------------//
+
+   //Make sure you aren't making unnecessary keys -----SCALE ONLY -- only because the scaleConstraint method doesn't work.
+   int $checkAutoKey = `autoKeyframe -query -state`;
+   autoKeyframe -state off;
+
+   //Assign the variables based on the info given in the window
+   string $objectName[];
+   string $targetName[];
+   int $startFrame = `intFieldGrp -query -value1 startFrameField`;
+   int $endFrame = `intFieldGrp -query -value1 endFrameField`;
+   int $stepCount = `intFieldGrp -query -value1 stepCountField`;
+   int $currentFrame;
+   int $translateXCheck;
+   int $translateYCheck;
+   int $translateZCheck;
+   int $rotateXCheck;
+   int $rotateYCheck;
+   int $rotateZCheck;
+   int $scaleXCheck;
+   int $scaleYCheck;
+   int $scaleZCheck;
+   string $maintainOffset;
+
+   string $transformItem[];
+   string $transformItem_Split[];
+
+   float $scaleInit[];
+   float $scalePre[];
+   float $scalePost[];
+   float $scaleDif[];
+
+   string $xCheck;
+   string $yCheck;
+   string $zCheck;
+
+   print "_________________________Start Matchmoving!________________________________";
+   print ("\n");
+
+   for ($i = 0; $i < $arraySize_Object; $i++) //One large loop for to process the lists line by line.
+   {
+   print ("Matching object: " + ($i + 1) + " out of " + $arraySize_Object + "\n");
+
+	   //initialize variables at the start of each loop
+      $translateXCheck = 1;
+   	$translateYCheck = 1;
+   	$translateZCheck = 1;
+   	$rotateXCheck = 1;
+   	$rotateYCheck = 1;
+   	$rotateZCheck = 1;
+   	$scaleXCheck = 1;
+   	$scaleYCheck = 1;
+   	$scaleZCheck = 1;
+  	   $maintainOffset = "On";
+
+      textScrollList -edit -selectIndexedItem ($i + 1) object_List;
+      textScrollList -edit -selectIndexedItem ($i + 1) transform_List;
+      textScrollList -edit -selectIndexedItem ($i + 1) target_List;
+
+      //Assign the variables based on the info given in the window
+      $objectName = `textScrollList -query -selectItem object_List`;
+      $transformItem = `textScrollList -query -selectItem transform_List`;
+      $targetName = `textScrollList -query -selectItem target_List`;
+
+      tokenize $transformItem[0] " " $transformItem_Split; //Split the string $transformItem into pieces as separated by spaces (" "). Each piece goes into the array $transformItem_Split.
+
+//		print $transformItem_Split;
+//		print ("\n");
+
+      //Assign the variables based on the info given in the window
+      if ($transformItem_Split[0] != "tx")
+      {
+	      $translateXCheck = 0;
+      }
+      if ($transformItem_Split[1] != "ty")
+      {
+	   $translateYCheck = 0;
+	   }
+      if ($transformItem_Split[2] != "tz")
+      {
+	   $translateZCheck = 0;
+	   }
+	   if ($transformItem_Split[3] != "rx")
+      {
+	   $rotateXCheck = 0;
+	   }
+	   if ($transformItem_Split[4] != "ry")
+      {
+	   $rotateYCheck = 0;
+	   }
+	   if ($transformItem_Split[5] != "rz")
+      {
+	   $rotateZCheck = 0;
+	   }
+      if ($transformItem_Split[6] != "mo")
+      {
+	   $maintainOffset = "Off";
+	   }
+
+/*      printObjects_advanced ($objectName[0], $targetName[0], $startFrame, $endFrame, $stepCount, $translateXCheck, $translateYCheck, $translateZCheck, $rotateXCheck, $rotateYCheck, $rotateZCheck, $maintainOffset);
+      print ("\n");
+      print $i;
+      print ("\n");
+*/
+      //------Initial Variables--------
+      $currentFrame = $startFrame;
+
+	   //------Initial Variables--------
+	   int $currentFrame = $startFrame;
+	   string $xCheck = "none";
+	   string $yCheck = "none";
+	   string $zCheck = "none";
+	
+	   //------Set start time-------
+	   currentTime $currentFrame;
+
+	   //------Set Constraints-----
+	   if ($translateXCheck == 1 || $translateYCheck == 1 || $translateZCheck == 1)
+	   {
+	      if ($translateXCheck == 0)
+	      {
+	         $xCheck = "x";
+	      }
+	      if ($translateYCheck == 0)
+	      {
+	         $yCheck = "y";
+	      }
+	      if ($translateZCheck == 0)
+	      {
+	         $zCheck = "z";
+	      }
+	
+	      if ($maintainOffset == "On")
+	      {
+	         pointConstraint -mo -weight 1 -skip $xCheck -skip $yCheck -skip $zCheck $targetName[0] $objectName[0];
+	      }
+	      else
+	      {
+	         pointConstraint -offset 0 0 0 -weight 1 -skip $xCheck -skip $yCheck -skip $zCheck $targetName[0] $objectName[0];
+	      }
+	   }
+
+	   if ($rotateXCheck == 1 || $rotateYCheck == 1 || $rotateZCheck == 1)
+	   {
+	      if ($rotateXCheck == 0)
+	      {
+	         $xCheck = "x";
+	      }
+	      if ($rotateYCheck == 0)
+	      {
+	         $yCheck = "y";
+	      }
+	      if ($rotateZCheck == 0)
+	      {
+	         $zCheck = "z";
+	      }
+	
+	      if ($maintainOffset == "On")
+	      {
+	         orientConstraint -mo -weight 1 -skip $xCheck -skip $yCheck -skip $zCheck $targetName[0] $objectName[0];
+	      }
+	      else
+	      {
+	         orientConstraint -offset 0 0 0 -weight 1 -skip $xCheck -skip $yCheck -skip $zCheck $targetName[0] $objectName[0];
+	      }
+	   }
+
+	   //--START LOOP--//
+	   while ($currentFrame <= $endFrame)
+	   {
+	      //------Set start time-------
+	      currentTime $currentFrame;
+	
+	      //------Set keys------
+	      if ($translateXCheck == 1)
+	      {
+	         setKeyframe ($objectName[0] + ".tx");
+	      }
+	      if ($translateYCheck == 1)
+	      {
+	         setKeyframe ($objectName[0] + ".ty");
+	      }
+	      if ($translateZCheck == 1)
+	      {
+	         setKeyframe ($objectName[0] + ".tz");
+	      }
+	      if ($rotateXCheck == 1)
+	      {
+	         setKeyframe ($objectName[0] + ".rx");
+	      }
+	      if ($rotateYCheck == 1)
+	      {
+	         setKeyframe ($objectName[0] + ".ry");
+	      }
+	      if ($rotateZCheck == 1)
+	      {
+	         setKeyframe ($objectName[0] + ".rz");
+	      }
+	      if ($scaleXCheck == 1)
+	      {
+	         setKeyframe ($objectName[0] + ".sx");
+	      }
+	      if ($scaleYCheck == 1)
+	      {
+	         setKeyframe ($objectName[0] + ".sy");
+	      }
+	      if ($scaleZCheck == 1)
+	      {
+	         setKeyframe ($objectName[0] + ".sz");
+	      }
+
+	      //------Advanced time-------
+	      $currentFrame += $stepCount;
+	
+	      //--END LOOP--//
+	   }
+
+	   //------Delete Constraints-----
+	   if ($translateXCheck == 1 || $translateYCheck == 1 || $translateZCheck == 1)
+	   {
+	      pointConstraint -remove $targetName[0] $objectName[0];
+	   }
+	   if ($rotateXCheck == 1 || $rotateYCheck == 1 || $rotateZCheck == 1)
+	   {
+	      orientConstraint -remove $targetName[0] $objectName[0];
+	   }
+
+      textScrollList -edit -deselectAll object_List;
+      textScrollList -edit -deselectAll transform_List;
+      textScrollList -edit -deselectAll target_List;
+      clear $transformItem;
+      clear $transformItem_Split;
+   }
+
+   //Set AutoKey to how it was before
+   if ($checkAutoKey == 1)
+   {
+      autoKeyframe -state on;
+   }
+}
+
+
+proc printObjects_advanced (string $objectName, string $targetName, int $startFrame, int $endFrame, int $stepCount, int $translateXCheck, int $translateYCheck, int $translateZCheck, int $rotateXCheck, int $rotateYCheck, int $rotateZCheck, string $maintainOffset)
+{
+   print ("Object: " + $objectName);
+   print("\n");
+   print ("Target: " + $targetName);
+   print("\n");
+   print ("Start Frame: " + $startFrame);
+   print("\n");
+   print ("End Frame: " + $endFrame);
+   print("\n");
+   print ("Step Count: " + $stepCount);
+   print("\n");
+   print ("Translate Checked: " + $translateXCheck + $translateYCheck + $translateZCheck);
+   print("\n");
+   print ("Rotate Checked: " + $rotateXCheck + $rotateYCheck + $rotateZCheck);
+   print("\n");
+   print ("Maintain Offset: " + $maintainOffset);
+   print("\n");
+}

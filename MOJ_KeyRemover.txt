@@ -1,0 +1,74 @@
+/*   MOJ_KeyReducer
+Gets the max and min values on the graph editor and if the difference is below a threshold, deletes all keys from that channel
+*/
+
+string $closeMenu_Command = "menuCommandClose ()";
+string $startKeyRemoval = "keyRemover ()";
+
+//Check if window is already open. If so, close it.
+if (`window -exists MOJ_keyRemoverWindow`) deleteUI MOJ_keyRemoverWindow;
+
+//Build window
+window -title "MOJ Key Remover" -menuBar true MOJ_keyRemoverWindow;
+
+//Build menu bar
+
+menu -label "File";
+   menuItem -label "Close Window"
+            -command $closeMenu_Command;
+
+//Build Column
+frameLayout -label "Any channel with a keyframe difference less than the threshold loses all its keys.";
+   textFieldButtonGrp -label "Choose a threshold   "
+         -text "1.0"
+         -buttonLabel "Remove Keys"
+         -buttonCommand $startKeyRemoval
+         thresholdField; //You are naming this Field 'thresholdField'
+
+//Show the dialog box
+showWindow MOJ_keyRemoverWindow;
+
+
+proc menuCommandClose ()
+{
+  deleteUI MOJ_keyRemoverWindow;
+}
+
+proc keyRemover ()
+{
+   string $select[] = `ls -sl`;
+   string $current;
+   string $attributes[];
+   string $currentAttr;
+   string $object;
+
+   float $values[];
+   float $currVal;
+   float $initialVal;
+
+   int $isFlat;
+
+
+   float $threshold = `textFieldButtonGrp -query -text thresholdField`;
+
+	for($current in $select){
+		$attributes = `listAttr -k $current`;
+		for($currentAttr in $attributes){
+			$object = $current + "." + $currentAttr;
+			$values = `keyframe -time ":" -query -valueChange $object`;
+			$isFlat = 1; //1 = true
+			$initialVal = $values[0];
+			for($currVal in $values){
+			   if( ($initialVal - $currVal) < ($threshold * -1) || ($initialVal - $currVal) > ($threshold) ){
+				   $isFlat = 0; //0 = false
+					break;
+				}
+			}
+			if ($isFlat == 1){
+				selectKey -clear;
+				select $current;
+			   delete -channels -attribute $currentAttr;
+			}
+		}
+	}
+}

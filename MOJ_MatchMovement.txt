@@ -1,0 +1,637 @@
+/*   MOJ Match Movement Tool
+
+This tool takes two objects: Object and Target
+It will constrain the Object to the Target on the initial frame
+It will run through the timeline and make keyframes on the Object by the StepCount
+It will remove the Target's constraints on the Object
+Now the Object should be moving exactly how the Target moves
+*/
+
+
+////////////////////////////////////
+//-----Initialized Variables-----//
+//////////////////////////////////
+string $objectTextField;
+string $targetTextField;
+
+string $select[] = `ls -sl`;
+
+string $objectName;
+string $targetName;
+
+int $startFrame;
+int $endFrame;
+int $stepCount;
+
+int $translateXCheck;
+int $translateYCheck;
+int $translateZCheck;
+int $rotateXCheck;
+int $rotateYCheck;
+int $rotateZCheck;
+int $scaleXCheck;
+int $scaleYCheck;
+int $scaleZCheck;
+
+int $maintainOffset;
+
+string $saveMenuCommand = "menuCommandSave ()";
+string $loadMenuCommand = "menuCommandLoad ()";
+string $closeMenuCommand = "menuCommandClose ()";
+
+string $currentSelection_Command = "currentSelection()";
+
+string $objectButtonCommand = "buttonCommandObject ()";
+string $targetButtonCommand = "buttonCommandTarget ()";
+string $startMatchMoving = "matchMovement ()";
+
+//////////////////////////////////
+//-----Execution commands------//
+////////////////////////////////
+
+if ($select[0] == "")
+{
+   $objectTextField = "Select Object or Type Name Here";
+   $targetTextField = "Select Target or Type Name Here";
+}
+else if ($select[1] == "")
+{
+   $objectTextField = $select[0];
+   $targetTextField = "Select Target or Type Name Here";
+}
+else
+{
+   $objectTextField = $select[0];
+   $targetTextField = $select[1];
+}
+
+float $minTime = `playbackOptions -q -minTime`;
+float $maxTime = `playbackOptions -q -maxTime`;
+
+/////////////////////////////
+//-----UserInterface------//
+///////////////////////////
+
+//Check if window is already open. If so, close it.
+if (`window -exists MOJ_MatchMoveWindow`) deleteUI MOJ_MatchMoveWindow;
+
+//Build window
+window -title "MOJ Match Movement Tool" -menuBar true MOJ_MatchMoveWindow;
+
+//Build menu bar
+menu -label "File";
+   menuItem -label "Save Settings"
+            -command $saveMenuCommand;
+   menuItem -label "Load Settings"
+            -command $loadMenuCommand;
+   menuItem -divider true;
+   menuItem -label "Close Window"
+            -command $closeMenuCommand;
+
+menu -label "Options";
+   menuItem -label "Double Selection"
+            -checkBox on
+            doubleSelectBox; //You are naming this Field 'doubleSelectBox'
+   menuItem -label "Use Active Selection Only"
+            -checkBox off
+            -command $currentSelection_Command
+            currentSelectionBox; //You are naming this checkBox 'currentSelectionBox'
+
+
+//Build Tabs
+//tabLayout -label "Basic";
+//tabLayout -label "Multi";
+
+//Build Column
+
+columnLayout;
+   frameLayout -label "What Object would you like to move?";
+      textFieldButtonGrp -label "Object   "
+         -text $objectTextField
+         -columnWidth 1 80
+         -buttonLabel "Use Selected"
+         -buttonCommand $objectButtonCommand 
+         objectField; //You are naming this Field 'objectField'
+   setParent ..;
+
+   frameLayout  -label "What Target would you like your object to follow?";
+      textFieldButtonGrp -label "Target   "
+         -text $targetTextField
+         -columnWidth 1 80
+         -buttonLabel "Use Selected"
+         -buttonCommand $targetButtonCommand
+         targetField; //You are naming this Field 'targetField'
+   setParent ..;
+
+   rowColumnLayout -nc 5;
+      intFieldGrp -label "Start Frame   "
+         -value1 $minTime
+         startFrameField; //You are naming this Field 'startFrameField'
+
+      text -label "Translate ";
+      checkBox -label "X"
+         -value 1
+         translateXBox; //You are naming this Field 'translateXBox'
+      checkBox -label "Y"
+         -value 1
+         translateYBox; //You are naming this Field 'translateYBox'
+      checkBox -label "Z"
+         -value 1
+         translateZBox; //You are naming this Field 'translateZBox'
+   setParent ..;
+
+   rowColumnLayout -nc 5;
+      intFieldGrp -label "End Frame   "
+         -value1 $maxTime
+         endFrameField; //You are naming this Field 'endFrameField'
+
+      text -label "Rotate     ";
+      checkBox -label "X"
+         -value 1
+         rotateXBox; //You are naming this Field 'rotateXBox'
+      checkBox -label "Y"
+         -value 1
+         rotateYBox; //You are naming this Field 'rotateYBox'
+      checkBox -label "Z"
+         -value 1
+         rotateZBox; //You are naming this Field 'rotateZBox'
+   setParent ..;
+
+   rowColumnLayout -nc 5;
+      intFieldGrp -label "Step Count   "
+         -value1 1
+         stepCountField; //You are naming this Field 'stepCountField'
+
+      text -label "Scale        ";
+      checkBox -label "X"
+         scaleXBox; //You are naming this Field 'scaleXBox'
+      checkBox -label "Y"
+         scaleYBox; //You are naming this Field 'scaleYBox'
+      checkBox -label "Z"
+         scaleZBox; //You are naming this Field 'scaleZBox'
+   setParent ..;
+
+   rowLayout -numberOfColumns 3;
+      button -label "Start Match Moving"
+         -command $startMatchMoving
+         matchMoveButton; //You are naming this Button 'matchMoveButton'
+
+      text -label "                                        ";
+
+      optionMenu -label "Maintain Offset"
+         maintainOffsetMenu; //You are naming this Field 'maintainOffsetMenu'
+         menuItem -label "On";
+         menuItem -label "Off";
+   setParent ..;
+
+//Show the dialog box
+showWindow MOJ_MatchMoveWindow;
+
+/////////////////////////
+//-----Procedures-----//
+///////////////////////
+
+proc buttonCommandObject ()
+{
+  string $selected[] = `ls -sl`;
+  string $textFieldObject = $selected[0];
+  textFieldButtonGrp -edit -text $textFieldObject objectField;
+  print $textFieldObject;
+  print("\n");
+
+  int $doubleSelect = `menuItem -query -checkBox doubleSelectBox`;
+
+  if (($doubleSelect == 1) && ($selected[1] != ""))
+  {
+    string $textFieldTarget = $selected[1];
+    textFieldButtonGrp -edit -text $textFieldTarget targetField;
+    print $textFieldTarget;
+    print("\n");
+  }
+}
+
+proc buttonCommandTarget ()
+{
+  string $selected[] = `ls -sl`;
+  string $textFieldTarget = $selected[0];
+  textFieldButtonGrp -edit -text $textFieldTarget targetField;
+  print $textFieldTarget;
+  print("\n");
+
+  int $doubleSelect = `menuItem -query -checkBox doubleSelectBox`;
+
+  if (($doubleSelect == 1) && ($selected[1] != ""))
+  {
+     string $textFieldObject = $selected[1];
+     textFieldButtonGrp -edit -text $textFieldObject objectField;
+     print $textFieldObject;
+     print("\n");
+  }
+}
+				
+proc printObjects (string $objectName, string $targetName, int $startFrame, int $endFrame, int $stepCount, int $translateXCheck, int $translateYCheck, int $translateZCheck, int $rotateXCheck, int $rotateYCheck, int $rotateZCheck, int $scaleXCheck, int $scaleYCheck, int $scaleZCheck, string $maintainOffset)
+{
+   print ("Object: " + $objectName);
+   print("\n");
+   print ("Target: " + $targetName);
+   print("\n");
+   print ("Start Frame: " + $startFrame);
+   print("\n");
+   print ("End Frame: " + $endFrame);
+   print("\n");
+   print ("Step Count: " + $stepCount);
+   print("\n");
+   print ("Translate Checked: " + $translateXCheck + $translateYCheck + $translateZCheck);
+   print("\n");
+   print ("Rotate Checked: " + $rotateXCheck + $rotateYCheck + $rotateZCheck);
+   print("\n");
+   print ("Scale Checked: " + $scaleXCheck + $scaleYCheck + $scaleZCheck);
+   print("\n");
+   print ("Maintain Offset: " + $maintainOffset);
+   print("\n");
+}
+
+proc menuCommandSave ()
+{
+   string $multipleFilters = "Text Files (*.txt);;All Files (*.*)";   //Types of files to browse for
+   string $filePath[] = `fileDialog2 -fileMode 0 -fileFilter $multipleFilters -selectFileFilter "Text Files"`;   //-fileMode = Indicate what the dialog is to return. Check 'help' for details.
+
+   //Assign the variables based on the info given in the window
+   string $objectName = `textFieldButtonGrp -query -text objectField`;
+   string $targetName = `textFieldButtonGrp -query  -text targetField`;
+   string $startFrame = `intFieldGrp -query -value1 startFrameField`;
+   string $endFrame = `intFieldGrp -query -value1 endFrameField`;
+   string $stepCount = `intFieldGrp -query -value1 stepCountField`;
+   string $translateXCheck = `checkBox -query -value  translateXBox`;
+   string $translateYCheck = `checkBox -query -value  translateYBox`;
+   string $translateZCheck = `checkBox -query -value  translateZBox`;
+   string $rotateXCheck = `checkBox -query -value  rotateXBox`;
+   string $rotateYCheck = `checkBox -query -value  rotateYBox`;
+   string $rotateZCheck = `checkBox -query -value  rotateZBox`;
+   string $scaleXCheck = `checkBox -query -value  scaleXBox`;
+   string $scaleYCheck = `checkBox -query -value  scaleYBox`;
+   string $scaleZCheck = `checkBox -query -value  scaleZBox`;
+   string $maintainOffset = `optionMenu -query -value maintainOffsetMenu`;
+
+   string $uiElements[];
+   //Assign the variables based on the info given in the window
+   $uiElements[0] = $objectName;
+   $uiElements[1] = $targetName;
+   $uiElements[2] = $startFrame;
+   $uiElements[3] = $endFrame;
+   $uiElements[4] = $stepCount;
+   $uiElements[5] = $translateXCheck;
+   $uiElements[6] = $translateYCheck;
+   $uiElements[7] = $translateZCheck;
+   $uiElements[8] = $rotateXCheck;
+   $uiElements[9] = $rotateYCheck;
+   $uiElements[10] = $rotateZCheck;
+   $uiElements[11] = $scaleXCheck;
+   $uiElements[12] = $scaleYCheck;
+   $uiElements[13] = $scaleZCheck;
+   $uiElements[14] = $maintainOffset;
+
+   string $concatenate = $uiElements[0] + " \n"  + $uiElements[1] + " \n"  + $uiElements[2] + " \n" + $uiElements[3] + " \n" + $uiElements[4] + " \n" + $uiElements[5] + " \n" + $uiElements[6] + " \n" + $uiElements[7] + " \n" + $uiElements[8] + " \n" + $uiElements[9] + " \n" + $uiElements[10] + " \n" + $uiElements[11] + " \n" + $uiElements[12] + " \n" + $uiElements[13] + " \n" + $uiElements[14];
+
+   $fileId = `fopen $filePath[0] "w"`;
+   fprint $fileId $concatenate;
+   fclose $fileId;
+}
+
+proc menuCommandLoad ()
+{
+   string $multipleFilters = "Text Files (*.txt);;All Files (*.*)";   //Types of files to browse for
+   string $filePath[] = `fileDialog2 -fileMode 1 -fileFilter $multipleFilters -selectFileFilter "Text Files"`;   //-fileMode = Indicate what the dialog is to return. Check 'help' for details.
+
+   $fileId = `fopen $filePath[0] "r"`;
+
+   string $strings[];
+   int $integers[];
+
+   int $i = 0;
+   while ( $i < 2 ) {
+      $strings[$i] = `fgetline $fileId`;
+      print $strings[$i];
+      $i += 1;
+   }
+
+   //------Remove any white spaces within Target or Object names------
+   string $tokenize[];
+   tokenize $strings[0] " " $tokenize;
+   $strings[0] = $tokenize[0];
+   tokenize $strings[1] " " $tokenize;
+   $strings[1] = $tokenize[0];
+
+   $i = 0;
+   while ( $i < 12 ) {
+      $integers[$i] = `fgetline $fileId`;
+      print ($integers[$i] + "\n");
+      $i += 1;
+   }
+   
+   $strings[2] = `fgetline $fileId`;
+   print ($strings[2] + "\n");
+
+   textFieldButtonGrp -edit -text $strings[0] objectField;
+   textFieldButtonGrp -edit -text $strings[1] targetField;
+   intFieldGrp -edit  -value1 $integers[0] startFrameField;
+   intFieldGrp -edit -value1 $integers[1] endFrameField;
+   intFieldGrp -edit -value1 $integers[2] stepCountField;
+   checkBox -edit -value $integers[3]  translateXBox;
+   checkBox -edit -value $integers[4]  translateYBox;
+   checkBox -edit -value $integers[5]  translateZBox;
+   checkBox -edit -value $integers[6]  rotateXBox;
+   checkBox -edit -value $integers[7]  rotateYBox;
+   checkBox -edit -value $integers[8]  rotateZBox;
+   checkBox -edit -value $integers[9]  scaleXBox;
+   checkBox -edit -value $integers[10]  scaleYBox;
+   checkBox -edit -value $integers[11]  scaleZBox;
+   optionMenu -edit -value $strings[2] maintainOffsetMenu;
+
+   fclose $fileId;
+}
+
+proc menuCommandClose ()
+{
+  deleteUI MOJ_MatchMoveWindow;
+}
+
+proc currentSelection ()
+{
+   int $currentSelectionMode = `menuItem -query -checkBox currentSelectionBox`;
+
+   if ($currentSelectionMode == 1)
+   {
+      textFieldButtonGrp -edit -enable false objectField;
+      textFieldButtonGrp -edit -enable false targetField;
+      menuItem -edit -enable false doubleSelectBox;
+   }
+   else
+   {
+      textFieldButtonGrp -edit -enable true objectField;
+      textFieldButtonGrp -edit -enable true targetField;
+      menuItem -edit -enable true doubleSelectBox;
+   }
+}
+
+proc matchMovement ()
+{
+   //Assign the variables based on the info given in the window
+   string $objectName = `textFieldButtonGrp -query -text objectField`;
+   string $targetName = `textFieldButtonGrp -query -text targetField`;
+   int $startFrame = `intFieldGrp -query -value1 startFrameField`;
+   int $endFrame = `intFieldGrp -query -value1 endFrameField`;
+   int $stepCount = `intFieldGrp -query -value1 stepCountField`;
+   int $translateXCheck = `checkBox -query -value translateXBox`;
+   int $translateYCheck = `checkBox -query -value translateYBox`;
+   int $translateZCheck = `checkBox -query -value translateZBox`;
+   int $rotateXCheck = `checkBox -query -value rotateXBox`;
+   int $rotateYCheck = `checkBox -query -value rotateYBox`;
+   int $rotateZCheck = `checkBox -query -value rotateZBox`;
+   int $scaleXCheck = `checkBox -query -value scaleXBox`;
+   int $scaleYCheck = `checkBox -query -value scaleYBox`;
+   int $scaleZCheck = `checkBox -query -value scaleZBox`;
+   string $maintainOffset = `optionMenu -query -value maintainOffsetMenu`;
+   
+   float $scaleInit[];
+   float $scalePre[];
+   float $scalePost[];
+   float $scaleDif[];
+   
+   //Make sure you aren't making unnecessary keys -----SCALE ONLY -- only because the scaleConstraint method doesn't work.
+   int $checkAutoKey = `autoKeyframe -query -state`;
+   autoKeyframe -state off;
+
+   print "_________________________Start Matchmoving!________________________________";
+   print ("\n");
+
+   int $currentSelectionMode = `menuItem -query -checkBox currentSelectionBox`;
+   if ($currentSelectionMode == 1)
+   {
+      string $selected[] = `ls -sl`;
+      string $textFieldObject = $selected[0];
+      string $textFieldTarget = $selected[1];
+
+      textFieldButtonGrp -edit -text $textFieldObject objectField;
+      textFieldButtonGrp -edit -text $textFieldTarget targetField;
+  }
+
+   printObjects ($objectName, $targetName, $startFrame, $endFrame, $stepCount, $translateXCheck, $translateYCheck, $translateZCheck, $rotateXCheck, $rotateYCheck, $rotateZCheck, $scaleXCheck, $scaleYCheck, $scaleZCheck, $maintainOffset);
+   print ("\n");
+
+   //------Initial Variables--------
+   int $currentFrame = $startFrame;
+   string $xCheck = "none";
+   string $yCheck = "none";
+   string $zCheck = "none";
+
+   //------Set start time-------
+   currentTime $currentFrame;
+       
+   //------Set Constraints-----
+   if ($translateXCheck == 1 || $translateYCheck == 1 || $translateZCheck == 1)
+   {
+      if ($translateXCheck == 0)
+      {
+         $xCheck = "x";
+      }
+      if ($translateYCheck == 0)
+      {
+         $yCheck = "y";
+      }
+      if ($translateZCheck == 0)
+      {
+         $zCheck = "z";
+      }
+
+      if ($maintainOffset == "On")
+      {
+         pointConstraint -mo -skip $xCheck -skip $yCheck -skip $zCheck $targetName $objectName;
+      }
+      else
+      {
+         pointConstraint -offset 0 0 0 -skip $xCheck -skip $yCheck -skip $zCheck $targetName $objectName;
+      }
+   }
+
+   if ($rotateXCheck == 1 || $rotateYCheck == 1 || $rotateZCheck == 1)
+   {
+      if ($rotateXCheck == 0)
+      {
+         $xCheck = "x";
+      }
+      if ($rotateYCheck == 0)
+      {
+         $yCheck = "y";
+      }
+      if ($rotateZCheck == 0)
+      {
+         $zCheck = "z";
+      }
+
+      if ($maintainOffset == "On")
+      {
+         orientConstraint -mo -skip $xCheck -skip $yCheck -skip $zCheck $targetName $objectName;
+      }
+      else
+      {
+         orientConstraint -offset 0 0 0 -skip $xCheck -skip $yCheck -skip $zCheck $targetName $objectName;
+      }
+   }
+   if ($scaleXCheck == 1 || $scaleYCheck == 1 || $scaleZCheck == 1)
+   {
+      $scaleInit[0] = `getAttr ($objectName + ".sx")`;
+      $scaleInit[1] = `getAttr ($objectName + ".sy")`;
+      $scaleInit[2] = `getAttr ($objectName + ".sz")`;
+   }
+
+   //------Set start time-------
+   currentTime $currentFrame;
+
+   //--START LOOP--//
+   while ($currentFrame < $endFrame)
+   {
+      //------Set keys------
+      if ($translateXCheck == 1)
+      {
+         setKeyframe ($objectName + ".tx");
+      }
+      if ($translateYCheck == 1)
+      {
+         setKeyframe ($objectName + ".ty");
+      }
+      if ($translateZCheck == 1)
+      {
+         setKeyframe ($objectName + ".tz");
+      }
+      if ($rotateXCheck == 1)
+      {
+         setKeyframe ($objectName + ".rx");
+      }
+      if ($rotateYCheck == 1)
+      {
+         setKeyframe ($objectName + ".ry");
+      }
+      if ($rotateZCheck == 1)
+      {
+         setKeyframe ($objectName + ".rz");
+      }
+      if ($scaleXCheck == 1)  //-----SCALE ONLY -- Unfortunately, the scaleConstraint does not allow you to make keyframes at the same time, so we must resort to the old-school way
+      {
+         setKeyframe ($objectName + ".sx");
+         $scaleInit[0] = `getAttr ($objectName + ".sx")`;
+      }
+      if ($scaleYCheck == 1)
+      {
+         setKeyframe ($objectName + ".sy");
+         $scaleInit[1] = `getAttr ($objectName + ".sy")`;
+      }
+      if ($scaleZCheck == 1)
+      {
+         setKeyframe ($objectName + ".sz");
+         $scaleInit[2] = `getAttr ($objectName + ".sz")`;
+      }
+      if ($scaleXCheck == 1 || $scaleYCheck == 1 || $scaleZCheck == 1)  //------SCALE ONLY -- Obtain world space of Target-----
+      {
+         $scalePre[0] = `getAttr ($targetName + ".sx")`;
+         $scalePre[1] = `getAttr ($targetName + ".sy")`;
+         $scalePre[2] = `getAttr ($targetName + ".sz")`;
+      }
+
+      //------Advanced time-------
+      $currentFrame += $stepCount;
+
+      if ($currentFrame > $endFrame)  //Prevent keyframes going beyond the last frame requested
+      {
+         $currentFrame = $endFrame;
+         currentTime $currentFrame;
+
+         //------Set keys if the stepped framecount goes past the end------
+         if ($translateXCheck == 1)
+         {
+            setKeyframe ($objectName + ".tx");
+         }
+         if ($translateYCheck == 1)
+         {
+            setKeyframe ($objectName + ".ty");
+         }
+         if ($translateZCheck == 1)
+         {
+            setKeyframe ($objectName + ".tz");
+         }
+         if ($rotateXCheck == 1)
+         {
+            setKeyframe ($objectName + ".rx");
+         }
+         if ($rotateYCheck == 1)
+         {
+            setKeyframe ($objectName + ".ry");
+         }
+         if ($rotateZCheck == 1)
+         {
+            setKeyframe ($objectName + ".rz");
+         }
+      }
+      currentTime $currentFrame;
+      
+      if ($scaleXCheck == 1 || $scaleYCheck == 1 || $scaleZCheck == 1) //------SCALE ONLY -- Obtain world space of Target-----
+      {
+         $scalePost[0] = `getAttr ($targetName + ".sx")`;
+         $scalePost[1] = `getAttr ($targetName + ".sy")`;
+         $scalePost[2] = `getAttr ($targetName + ".sz")`;
+      }
+      
+      if ($scaleXCheck == 1) //------SCALE ONLY -- Find difference between two frames for Target------
+      {
+         $scaleDif[0] = $scalePost[0] / $scalePre[0];
+         $scaleInit[0] *= $scaleDif[0];
+      }
+      if ($scaleYCheck == 1)
+      {
+         $scaleDif[1] = $scalePost[1] / $scalePre[1];
+         $scaleInit[1] *= $scaleDif[1];
+      }
+      if ($scaleZCheck == 1)
+      {
+         $scaleDif[2] = $scalePost[2] / $scalePre[2];
+         $scaleInit[2] *= $scaleDif[2];
+      }
+
+      if ($scaleXCheck == 1 || $scaleYCheck == 1 || $scaleZCheck == 1)
+      {
+         scale -a $scaleInit[0] $scaleInit[1] $scaleInit[2] $objectName;
+      }
+      
+      if ($scaleXCheck == 1)
+      {
+         setKeyframe ($objectName + ".sx");
+      }
+      if ($scaleYCheck == 1)
+      {
+         setKeyframe ($objectName + ".sy");
+      }
+      if ($scaleZCheck == 1)
+      {
+         setKeyframe ($objectName + ".sz");
+      }
+
+      //--END LOOP--//
+   }
+
+   //------Delete Constraints-----
+   if ($translateXCheck == 1 || $translateYCheck == 1 || $translateZCheck == 1)
+   {
+      pointConstraint -remove $targetName $objectName;
+   }
+   if ($rotateXCheck == 1 || $rotateYCheck == 1 || $rotateZCheck == 1)
+   {
+      orientConstraint -remove $targetName $objectName;
+   }
+
+   //Set AutoKey to how it was before
+   if ($checkAutoKey == 1)
+   {
+      autoKeyframe -state on;
+   }
+
+}
